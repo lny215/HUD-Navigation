@@ -1,6 +1,6 @@
 /**
  * Web Accessibility & Attribute Inspector Extension
- * Lightweight & Security-Enhanced Version
+ * Hover Inspector & Navigation Panel (Global Eye Feature Removed)
  */
 
 const TAG_COLORS = {
@@ -16,20 +16,19 @@ const TAG_COLORS = {
 };
 
 const TAG_BG_COLORS = {
-  H1: 'rgba(9, 141, 242, 0.12)',
-  H2: 'rgba(54, 186, 100, 0.12)',
-  H3: 'rgba(220, 151, 49, 0.12)',
-  H4: 'rgba(231, 76, 60, 0.12)',
-  H5: 'rgba(155, 89, 182, 0.12)'
+  H1: 'rgba(9, 141, 242, 0.15)',
+  H2: 'rgba(54, 186, 100, 0.15)',
+  H3: 'rgba(220, 151, 49, 0.15)',
+  H4: 'rgba(231, 76, 60, 0.15)',
+  H5: 'rgba(155, 89, 182, 0.15)'
 };
 
 let sidePanel = null;
 let expandBtn = null;
 let metaFloatingBanner = null;
-let isGlobalBadgeVisible = false;
 let currentTab = 'HTAG';
 let currentTargetEl = null;
-let isTicking = false; // 마우스 렉 방지를 위한 쓰로틀링 락
+let isTicking = false;
 
 let options = {
   showHtag: true,
@@ -39,7 +38,6 @@ let options = {
   showNav: true
 };
 
-// 보안 강화: XSS 방지를 위한 HTML 이스케이프 함수
 function escapeHTML(str) {
   if (!str) return '';
   return String(str)
@@ -93,7 +91,9 @@ function applyOptions() {
     }
   }
 
-  if (!options.showAlt) removeAllHighlights();
+  if (!options.showAlt && !options.showHtag && !options.showTagging) {
+    removeAllHighlights();
+  }
 
   if (options.showMeta) {
     renderMetaFloatingBanner();
@@ -111,24 +111,24 @@ function renderMetaFloatingBanner() {
   metaFloatingBanner = document.createElement('div');
   metaFloatingBanner.id = 'hud-meta-floating-banner';
   metaFloatingBanner.style.cssText = `
-    position: fixed; top: 20px; right: 20px; z-index: 999999; width: 320px;
+    position: fixed; top: 20px; right: 20px; z-index: 999999; width: 360px;
     background: #1E1E1E; color: #FFFFFF; border-radius: 12px; border: 1px solid #333333;
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
     font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
-    font-size: 13px; letter-spacing: -0.025em; overflow: hidden; user-select: none;
+    font-size: 14px; letter-spacing: -0.025em; overflow: hidden; user-select: none;
   `;
 
   metaFloatingBanner.innerHTML = `
-    <div id="meta-banner-header" style="display:flex; justify-space-between; align-items:center; padding:10px 14px; background:#2A2A2A; cursor:move; border-bottom:1px solid #3A3A3A;">
-      <span style="background-color:#FF5722; color:#FFFFFF; font-weight:700; font-size:11px; padding:2px 6px; border-radius:4px;">META DESCRIPTION</span>
-      <div style="display:flex; gap:6px; align-items:center;">
+    <div id="meta-banner-header" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#2A2A2A; cursor:move; border-bottom:1px solid #3A3A3A;">
+      <span style="background-color:#FF5722; color:#FFFFFF; font-weight:700; font-size:12px; padding:3px 8px; border-radius:4px;">META DESCRIPTION</span>
+      <div style="display:flex; gap:8px; align-items:center;">
         <button id="btn-meta-banner-copy" title="설명 복사" style="background:transparent; border:none; color:#AAAAAA; cursor:pointer; padding:2px; display:flex; align-items:center;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
         </button>
-        <button id="btn-meta-banner-close" title="닫기" style="background:transparent; border:none; color:#AAAAAA; cursor:pointer; font-size:16px; line-height:1; padding:2px;">✕</button>
+        <button id="btn-meta-banner-close" title="닫기" style="background:transparent; border:none; color:#AAAAAA; cursor:pointer; font-size:18px; line-height:1; padding:2px;">✕</button>
       </div>
     </div>
-    <div style="padding:12px 14px; line-height:1.5; font-weight:500; color:#E0E0E0; word-break:break-all; white-space:pre-wrap; max-height:200px; overflow-y:auto; user-select:text;">${metaDesc}</div>
+    <div style="padding:14px 16px; line-height:1.5; font-weight:500; color:#E0E0E0; word-break:break-all; white-space:pre-wrap; max-height:220px; overflow-y:auto; user-select:text;">${metaDesc}</div>
   `;
 
   document.body.appendChild(metaFloatingBanner);
@@ -193,12 +193,6 @@ function createSidePanel() {
     <div class="nav-header">
       <h1 class="nav-title">Navigation</h1>
       <div class="nav-header-actions">
-        <button id="nav-btn-eye" class="nav-icon-btn" title="전체 배지 토글 (ON/OFF)">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
         <button id="nav-btn-collapse" class="nav-icon-btn" title="사이드바 접기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 17L13 12L18 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/>
@@ -229,7 +223,6 @@ function createSidePanel() {
   (document.body || document.documentElement).appendChild(sidePanel);
   (document.body || document.documentElement).appendChild(expandBtn);
 
-  const eyeBtn = document.getElementById('nav-btn-eye');
   const collapseBtn = document.getElementById('nav-btn-collapse');
   const tabHtag = document.getElementById('nav-tab-htag');
   const tabTagging = document.getElementById('nav-tab-tagging');
@@ -257,22 +250,6 @@ function createSidePanel() {
   tabTagging.addEventListener('click', () => switchTab('TAGGING', tabTagging));
   tabMeta.addEventListener('click', () => switchTab('META', tabMeta));
 
-  eyeBtn.addEventListener('click', () => {
-    isGlobalBadgeVisible = !isGlobalBadgeVisible;
-
-    if (isGlobalBadgeVisible) {
-      eyeBtn.style.color = '#22F2FF';
-      eyeBtn.style.background = 'rgba(34, 242, 255, 0.15)';
-      renderAllOverlayBadges();
-      showToast('전체 배지가 표시되었습니다.');
-    } else {
-      eyeBtn.style.color = '';
-      eyeBtn.style.background = '';
-      removeAllHighlights();
-      showToast('전체 배지가 숨겨졌습니다.');
-    }
-  });
-
   applyOptions();
 }
 
@@ -281,7 +258,7 @@ function buildHTagTree(hElements) {
   const stack = [];
 
   hElements.forEach((el, index) => {
-    const tagName = el.tagName;
+    const tagName = el.tagName.toUpperCase();
     const level = parseInt(tagName.replace('H', ''), 10);
     const textContent = (el.textContent || el.innerText || '').replace(/\s+/g, ' ').trim();
     if (!textContent) return;
@@ -551,12 +528,19 @@ function extractAllText(element) {
   return Array.from(new Set(texts)).join(' ').replace(/\s+/g, ' ');
 }
 
-// 실시간 마우스 하단 최적화 타깃 감지 함수
 function getRealTargetElement(e) {
   const elements = document.elementsFromPoint(e.clientX, e.clientY);
   
   for (const el of elements) {
     if (el.closest('#nav-side-panel, #nav-expand-btn, #hud-meta-floating-banner, .hud-hover-badge, .hud-area-highlight')) continue;
+
+    if (options.showHtag) {
+      const hEl = el.closest('h1, h2, h3, h4, h5, H1, H2, H3, H4, H5');
+      if (hEl) {
+        const text = (hEl.textContent || hEl.innerText || '').trim();
+        if (text.length > 0) return { type: 'HTAG', el: hEl };
+      }
+    }
 
     if (options.showTagging) {
       if (el.hasAttribute && el.hasAttribute('data-contents')) return { type: 'TAGGING', el: el };
@@ -564,13 +548,8 @@ function getRealTargetElement(e) {
       if (taggedParent) return { type: 'TAGGING', el: taggedParent };
     }
 
-    if (options.showHtag) {
-      const hEl = el.closest('h1, h2, h3, h4, h5');
-      if (hEl) return { type: 'HTAG', el: hEl };
-    }
-
     if (options.showAlt) {
-      if (el.tagName === 'IMG') return { type: 'ALT', el: el };
+      if (el.tagName && el.tagName.toUpperCase() === 'IMG') return { type: 'ALT', el: el };
       const childImg = el.querySelector('img');
       if (childImg && el.contains(childImg)) return { type: 'ALT', el: childImg };
     }
@@ -589,68 +568,11 @@ function getRealTargetElement(e) {
   return null;
 }
 
-function renderAllOverlayBadges() {
-  removeAllHighlights();
-
-  if (options.showTagging) {
-    document.querySelectorAll('[data-contents]').forEach(el => {
-      const val = el.getAttribute('data-contents');
-      if (val) {
-        const matches = extractUnderlineCodes(val);
-        createAndAppendBadge(el, 'TAGGING', matches.length > 0 ? matches.join(', ') : val);
-      }
-    });
-  }
-
-  if (options.showHtag) {
-    document.querySelectorAll('h1, h2, h3, h4, h5').forEach(el => {
-      const text = el.textContent || el.innerText || '';
-      if (text.trim() && (!options.showTagging || !el.hasAttribute('data-contents'))) {
-        createAndAppendBadge(el, el.tagName.toUpperCase(), text);
-      }
-    });
-  }
-
-  if (options.showAlt) {
-    document.querySelectorAll('img').forEach(img => {
-      if (options.showTagging && (img.hasAttribute('data-contents') || img.closest('[data-contents]'))) return;
-      let altVal = img.getAttribute('alt') || img.alt || '';
-      const parentContainer = img.closest('.c-lazy-media, article, section, div, picture, figure, a, li, .thumb') || img.parentElement;
-      if (parentContainer) {
-        const blindEl = parentContainer.querySelector('.blind, .sr-only, [class*="blind"]');
-        if (blindEl) {
-          const blindText = extractAllText(blindEl);
-          if (blindText) altVal = blindText;
-        }
-      }
-      if (altVal.trim() || img.getBoundingClientRect().width > 20) {
-        createAndAppendBadge(img, 'ALT', altVal);
-      }
-    });
-
-    document.querySelectorAll('p, .blind, .sr-only').forEach(p => {
-      if (p.closest('img')) return;
-      const text = extractAllText(p);
-      if (text.trim()) createAndAppendBadge(p, p.tagName === 'P' ? '<P>' : 'ALT', text);
-    });
-  }
-}
-
 function createAndAppendBadge(el, labelTag, rawText) {
   const rect = el.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0 && !el.parentElement) return;
+  if (rect.width === 0 || rect.height === 0 || rect.top < 0) return;
 
   let topPos = rect.top + window.scrollY;
-  let leftPos = rect.left + window.scrollX;
-
-  if (rect.width === 0 || rect.height === 0) {
-    if (el.parentElement) {
-      const parentRect = el.parentElement.getBoundingClientRect();
-      topPos = parentRect.top + window.scrollY;
-      leftPos = parentRect.left + window.scrollX;
-    }
-  }
-
   const isH = ['H1', 'H2', 'H3', 'H4', 'H5'].includes(labelTag);
   const isTagging = labelTag === 'TAGGING';
   const strokeColor = TAG_COLORS[labelTag] || '#CCCCCC';
@@ -660,10 +582,10 @@ function createAndAppendBadge(el, labelTag, rawText) {
     const areaHighlight = document.createElement('div');
     areaHighlight.className = 'hud-area-highlight';
     areaHighlight.style.cssText = `
-      position: absolute; top: ${topPos}px; left: ${leftPos}px;
+      position: absolute; top: ${topPos}px; left: ${rect.left + window.scrollX}px;
       width: ${rect.width}px; height: ${rect.height}px;
       background-color: ${TAG_BG_COLORS[labelTag] || 'rgba(0, 0, 0, 0.05)'};
-      border-radius: 8px; pointer-events: none; z-index: 999980;
+      border-radius: 10px; pointer-events: none; z-index: 999980;
     `;
     document.body.appendChild(areaHighlight);
   }
@@ -674,25 +596,23 @@ function createAndAppendBadge(el, labelTag, rawText) {
   const isDark = isTagging;
   const bgColor = isDark ? '#1E1E1E' : '#FFFFFF';
   const textColor = isDark ? '#FFFFFF' : '#000000';
-  const borderStyle = isDark ? '1px solid #333333' : (isH ? `1.5px solid ${strokeColor}` : '1px solid #CCCCCC');
 
   badge.style.cssText = `
-    position: absolute; top: ${Math.max(0, topPos - 38)}px; left: ${leftPos}px;
-    z-index: 999999; background: ${bgColor}; border-radius: 8px; padding: 6px 10px;
-    color: ${textColor}; font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
-    font-size: 12px; font-weight: 500; letter-spacing: -0.025em; pointer-events: none;
-    white-space: pre-wrap; word-break: break-all; box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.25);
-    display: flex; flex-direction: column; align-items: center; gap: 3px; line-height: 1.35;
-    max-width: 380px; max-height: 250px; overflow-y: auto; text-align: left; border: ${borderStyle};
+    position: absolute; top: ${Math.max(0, topPos - 60)}px; left: ${rect.left + window.scrollX}px;
+    z-index: 999999; background: ${bgColor}; border-radius: 12px; padding: 12px 18px;
+    color: ${textColor}; font-family: "Pretendard Variable", Pretendard, sans-serif;
+    font-size: 16px; font-weight: 500; letter-spacing: -0.025em; pointer-events: none;
+    white-space: pre-wrap; word-break: break-all; box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3);
+    display: flex; flex-direction: column; align-items: center; gap: 6px; line-height: 1.4;
+    max-width: 600px; max-height: 400px; overflow-y: auto; text-align: left; border: 2px solid ${isH ? strokeColor : '#CCCCCC'};
   `;
 
-  const tagColorStyle = `color: ${strokeColor}; font-weight: 700;`;
+  const tagColorStyle = `color: ${strokeColor}; font-weight: 800; font-size: 18px;`;
   const textToShow = safeContentText !== '' ? safeContentText : '내용 없음';
-  const dividerColor = isDark ? '#333333' : '#EEEEEE';
-
+  const dividerColor = isDark ? '#333333' : '#E0E0E0';
   badge.innerHTML = `
-    <div style="${tagColorStyle}; text-align: center; width: 100%; border-bottom: 1px solid ${dividerColor}; padding-bottom: 2px;">${labelTag}</div>
-    <div style="color: ${textColor}; font-weight: 500; width: 100%;">${textToShow}</div>
+    <div style="${tagColorStyle}; text-align: center; width: 100%; border-bottom: 2px solid ${dividerColor}; padding-bottom: 4px;">${labelTag}</div>
+    <div style="color: ${textColor}; font-weight: 600; width: 100%; font-size: 16px;">${textToShow}</div>
   `;
 
   document.body.appendChild(badge);
@@ -707,10 +627,7 @@ function removeAllHighlights() {
   document.querySelectorAll('.hud-hover-badge, .hud-area-highlight').forEach(el => el.remove());
 }
 
-// 렉 방지(Throttling): requestAnimationFrame 기반 핸들러
 document.addEventListener('mousemove', (e) => {
-  if (isGlobalBadgeVisible) return;
-
   if (!isTicking) {
     window.requestAnimationFrame(() => {
       if (sidePanel && sidePanel.contains(e.target)) {
@@ -750,7 +667,7 @@ document.addEventListener('mousemove', (e) => {
           }
           showSingleBadge(el, 'ALT', altVal);
         } else if (type === 'P') {
-          showSingleBadge(el, el.tagName === 'P' ? '<P>' : 'ALT', extractAllText(el));
+          showSingleBadge(el, el.tagName.toUpperCase() === 'P' ? '<P>' : 'ALT', extractAllText(el));
         }
       }
 
