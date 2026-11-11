@@ -1,0 +1,9 @@
+# OS / Editor 설정 파일
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 로그 및 임시 파일
+*.log
+*.tmp

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 210px;
+      padding: 12px;
+      margin: 0;
+      background-color: #121212;
+      color: #FFFFFF;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .setting-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .setting-item:last-child {
+      margin-bottom: 0;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 22px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #3A3A3C;
+      transition: .2s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #22F2FF;
+    }
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+  </style>
+</head>
+<body>
+  <div class="setting-item">
+    <span>H태그 값 보기</span>
+    <label class="switch">
+      <input type="checkbox" id="showHtag" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="setting-item">
+    <span>ALT/P값 보기</span>
+    <label class="switch">
+      <input type="checkbox" id="showAlt" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="setting-item">
+    <span>태깅값 보기</span>
+    <label class="switch">
+      <input type="checkbox" id="showTagging" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="setting-item">
+    <span>메타 설명 보기</span>
+    <label class="switch">
+      <input type="checkbox" id="showMeta" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div class="setting-item">
+    <span>네비게이션 보기</span>
+    <label class="switch">
+      <input type="checkbox" id="showNav" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
